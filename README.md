@@ -1,154 +1,231 @@
-# ✰ ShadowMarket AI
-### Ivy Plus 2026 Hackathon — Harvard × MIT × Duke × NYU
-**Member 3: Quant & Privacy Engine**
+# 🛡️ ShadowMarket AI — Privacy-Preserving Decentralized Dark Pool
+
+ShadowMarket AI is a **decentralized, privacy-preserving trading infrastructure** designed to eliminate information leakage in large institutional trades. By combining **Secure Multi-Party Computation (SMPC)**, **Multi-Agent AI Matching**, and **Internet Computer Smart Contracts**, ShadowMarket enables large-block trades to execute with:
+
+- Zero information leakage
+- Zero front-running risk
+- Zero slippage exposure
+- Cryptographically verified settlement
+
+The system replaces centralized dark pool brokers with a **trustless smart escrow governed by AI consensus**.
 
 ---
 
-## What This Module Does
+# ⚠️ The Problem — Information Leakage & Market Impact
 
-This repo contains the core privacy and intelligence layer for ShadowMarket AI — a next-generation dark pool matching system that lets institutional investors trade massive blocks of stock **without revealing their intent to predatory HFT algorithms**.
+When institutional traders execute large orders on public exchanges:
 
-Think of it as the **mathematical shredder** described in our pitch: your order is ripped into meaningless scraps, given to three different parties, and reassembled only at the moment of settlement — with no single computer ever seeing the raw number.
+- Order books reveal trade intent
+- High-frequency trading (HFT) bots front-run orders
+- Prices move against the trader
+- Significant slippage occurs
+
+Traditional dark pools attempt to solve this but rely on **trusted centralized brokers**, creating risks of:
+
+- Data exposure
+- Order flow monitoring
+- Market manipulation
+
+This creates a **Tragedy of the Private Commons** — privacy is promised but not guaranteed.
 
 ---
 
-## Architecture
+# 💡 The Solution — Trustless Stealth Liquidity
+
+ShadowMarket AI introduces a **Zero-Knowledge Smart Escrow + AI Matching Engine**.
+
+### Core Innovations
+
+### 🔐 Trade Intent Fragmentation
+Trade volumes are never transmitted as raw values. Orders are fragmented using **Additive Secret Sharing**, ensuring no system component sees the full trade.
+
+### 🤖 AI-Driven Blind Matching
+A Multi-Agent system performs probabilistic matching over encrypted fragments and produces a **Liquidity Confidence Score**.
+
+### ✅ Dual Verification Consensus
+Trade settlement requires:
+
+- AI matching approval
+- ML anomaly detection approval
+
+Both must approve before funds are released.
+
+### ⚡ Atomic Smart Contract Settlement
+A Motoko smart contract performs an **atomic asset swap** ensuring trustless execution.
+
+---
+
+# 🏗️ System Architecture
+
+ShadowMarket AI uses a three-layer architecture:
+
+| Layer | Technology | Role |
+|---|---|---|
+| **Frontend (Experience Layer)** | React, Tailwind, Wix Studio | Trading dashboard and trust visualization |
+| **AI Matching Engine** | Python, FastAPI, PyTorch | Secure matching and liquidity analysis |
+| **Shadow Ledger (Settlement Layer)** | Motoko, Internet Computer | Smart escrow and atomic settlement |
+
+---
+
+# ⚙️ Technical Working Principles
+
+## 1️⃣ Secure Multi-Party Computation (SMPC)
+
+When a user submits an order:
 
 ```
-shadowmarket/
-├── privacy_engine/
-│   └── secret_sharing.py      ← SMPC: Additive Secret Sharing + Differential Privacy
-├── anomaly_detection/
-│   └── spy_detector.py        ← Isolation Forest + LSTM Autoencoder (spy detection)
-├── feature_engineering/
-│   └── liquidity_features.py  ← 7 microstructure metrics + Composite Liquidity Score
-├── main.py                    ← Full pipeline demo
-└── requirements.txt
+Example: Buy 5000 shares
 ```
+
+The system splits the value into random fragments:
+
+```
+v = v₁ + v₂ + v₃
+```
+
+- No single fragment reveals the trade size
+- AI operates only on encrypted fragments
+- Raw values are never reconstructed during matching
 
 ---
 
-## Component 1: Privacy Engine (`privacy_engine/secret_sharing.py`)
+## 2️⃣ Dual-Node Consensus (AI + ML Verification)
 
-### Additive Secret Sharing
-An order of `1,000,000 shares @ $152.50` is split into 3 mathematically random shares over a Mersenne prime field (`2^61 - 1`). No single share reveals anything about the original value — this is **information-theoretically secure**.
+Settlement requires two independent approvals:
 
-```python
-from privacy_engine import OrderShredder
+### AI Matching Agent
+- Detects liquidity match
+- Computes confidence score
+- Approves trade feasibility
 
-shredder = OrderShredder(num_parties=3, dp_epsilon=0.5)
+### ML Security Engine
+- Detects abnormal trading patterns
+- Prevents probing or manipulation attacks
+- Confirms safe execution
 
-buy  = shredder.shred({"order_id": "B001", "side": "BUY",  "volume": 50000, "price": 152.50})
-sell = shredder.shred({"order_id": "S001", "side": "SELL", "volume": 40000, "price": 151.00})
+Only when both flags are true:
 
-result = shredder.match(buy, sell)
-# → {"matched": True, "clearing_price": 151.75, "volume_filled": 40000}
+```
+aiApproved = true
+mlApproved = true
 ```
 
-### Differential Privacy
-Laplace noise calibrated to `ε = 0.5` is added to shares before distribution, providing an additional layer of plausible deniability even if shares are partially leaked.
+The smart contract releases funds.
 
 ---
 
-## Component 2: Spy Detector (`anomaly_detection/spy_detector.py`)
+## 3️⃣ Trustless Smart Escrow (Motoko)
 
-Two-layer real-time anomaly detection to identify HFT agents probing the dark pool:
+The ShadowEscrow canister acts as:
 
-| Layer | Model | Latency | Description |
-|-------|-------|---------|-------------|
-| 1 | **Isolation Forest** | < 1ms | Catches outlier order-flow patterns instantly |
-| 2 | **LSTM Autoencoder** | ~5ms | Catches sequential probing behaviour over time |
+- settlement layer
+- asset ledger
+- escrow vault
+- transaction database
 
-```python
-from anomaly_detection import SpyDetector, MarketDataSimulator
+### Features
 
-sim      = MarketDataSimulator()
-detector = SpyDetector(seq_len=20)
-detector.fit(sim.normal_events(n=3000))
+- Orthogonal persistence (no external database)
+- RBTree-based state storage
+- Synthetic asset ledger (sUSD, sNVDA)
+- Upgrade-safe storage via preupgrade/postupgrade hooks
+- Atomic settlement guarantees
 
-report = detector.observe(suspicious_event)
-# → AnomalyReport(combined_risk=0.87, action="BLOCK")
-```
-
-**How spies are identified:** A spy agent typically sends many small cancel-replace orders in rapid succession, always via the same routing venue (low entropy), to triangulate the hidden pool volume. The LSTM learns the temporal autocorrelation structure of normal flow and flags deviations.
-
----
-
-## Component 3: Feature Engineering (`feature_engineering/liquidity_features.py`)
-
-7 microstructure-based liquidity metrics computed from raw OHLCV data:
-
-| Metric | Description |
-|--------|-------------|
-| **Kyle's Lambda** | Price impact per unit of signed volume (OLS regression) |
-| **Amihud Illiquidity** | Absolute return per dollar traded (rolling average) |
-| **Corwin-Schultz Spread** | Bid-ask spread proxy from high-low range (no L2 needed) |
-| **Realised Volatility** | Annualised sqrt of sum-of-squared log returns |
-| **Roll Implicit Spread** | From return autocovariance (Roll 1984) |
-| **Volume Imbalance** | Net signed volume / total volume in rolling window |
-| **Liquidity Half-Life** | AR(1) mean-reversion speed of price impact |
-
-These are aggregated into a **Composite Liquidity Score (0–100)** used by the matching agents.
-
-```python
-from feature_engineering import LiquidityFeatureEngine, TWAPScheduler, generate_ohlcv
-
-ohlcv    = generate_ohlcv(n_bars=500)
-engine   = LiquidityFeatureEngine(window=20)
-features = engine.transform(ohlcv)
-# features["liquidity_score"]   → float 0-100
-# features["liquidity_regime"]  → "LIQUID" | "NORMAL" | "ILLIQUID"
-
-# Schedule a 1M share trade optimally
-scheduler = TWAPScheduler(total_shares=1_000_000, n_slices=10)
-schedule  = scheduler.schedule(features)
-```
-
----
-
-## Quickstart
-
-```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Run the full pipeline demo
-python main.py
-
-# 3. Run individual modules
-python privacy_engine/secret_sharing.py
-python anomaly_detection/spy_detector.py
-python feature_engineering/liquidity_features.py
-```
-
----
-
-## Security Properties
-
-| Property | Mechanism | Guarantee |
-|----------|-----------|-----------|
-| **Order Privacy** | (n,n)-threshold additive secret sharing | Information-theoretic security |
-| **Volume Privacy** | Differential Privacy (ε=0.5) | (ε,δ)-DP guarantee |
-| **Spy Resistance** | Two-layer anomaly detection | >85% detection rate at <5% FPR |
-| **Price Privacy** | Secure multi-party comparison | Clearing price revealed only at match |
-
----
-
-## How This Integrates with the Full System
+Balances are mapped:
 
 ```
-Member 3 (this repo)                    Member 1 (Agents)
-─────────────────────                   ─────────────────
-liquidity_score ──────────────────────► Agent routing decisions
-SecretOrder (shreds) ─────────────────► Matching engine
-AnomalyReport ────────────────────────► Throttle / block spy agents
-
-                                        Member 2 (Dark Pool)
-                                        ─────────────────────
-SecretOrder (shreds) ─────────────────► Held by 3 separate parties
-                                         until settlement
+Principal → Asset Holdings
 ```
 
 ---
 
-*ShadowMarket AI — Privacy = Profit*
+# 🔄 End-to-End User Workflow
+
+## 1. Collateral Deposit
+User connects wallet and receives test assets.
+
+## 2. Intent Submission
+User submits trade intent (buy/sell).
+
+## 3. Secure Fragmentation
+Python engine splits order into secret shares.
+
+## 4. Blind Discovery
+AI engine matches buy/sell fragments.
+
+## 5. Approval Phase
+AI and ML engines approve trade.
+
+## 6. Atomic Settlement
+Motoko escrow executes asset swap.
+
+## 7. Cryptographic Verification
+Settlement hash returned as audit trail.
+
+Throughout the process:
+
+- Trade size remains private
+- Counterparty identity remains hidden
+- Liquidity remains confidential
+
+---
+
+# 🖥️ Frontend Experience (Web2.5 Interface)
+
+The frontend provides:
+
+- Wallet connection
+- Shadow wallet balance view
+- Stealth trade execution interface
+- Liquidity confidence visualization
+- AI decision status display
+- Cryptographic audit trail
+
+No order book or volume information is exposed.
+
+---
+
+# 🔐 Security Properties
+
+- Zero information leakage
+- Privacy-preserving matching
+- AI + ML consensus validation
+- Trustless settlement
+- Atomic swaps
+- Identity protection
+- Cryptographic auditability
+
+---
+
+# 🚀 Key Innovations
+
+- Privacy-preserving liquidity discovery
+- AI-governed smart escrow
+- Trustless dark pool infrastructure
+- Zero-knowledge trade settlement
+- Decentralized institutional trading architecture
+
+---
+
+# 🎯 Vision
+
+ShadowMarket AI enables institutional-grade trading privacy without centralized trust, creating a fully decentralized market infrastructure where liquidity can be discovered securely and executed transparently.
+
+---
+
+# 👥 Team Architecture
+
+- **Frontend & Experience Layer** — React + Tailwind dashboard
+- **AI Engine** — Secure matching and anomaly detection
+- **Web3 Backend** — Motoko escrow settlement on Internet Computer
+
+---
+
+# 📌 Status
+
+Hackathon prototype demonstrating:
+
+- Blind trade execution
+- AI approval flow
+- Dual-consensus settlement
+- Trustless atomic swap
